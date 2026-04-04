@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
 import client from '../api/client';
-import { Plus, Filter, MoreVertical, FileText, CheckCircle2, Clock, Send, Trash2, Edit3, ArrowRight, File } from 'lucide-react';
+import { Plus, Filter, MoreVertical, FileText, CheckCircle2, Clock, Send, Trash2, Edit3, ArrowRight, File, User, Calendar } from 'lucide-react';
 import { format } from 'date-fns';
 
 const TeacherDashboard = () => {
@@ -10,6 +10,8 @@ const TeacherDashboard = () => {
   const [filter, setFilter] = useState('All');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newAssignment, setNewAssignment] = useState({ title: '', description: '', dueDate: '' });
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingId, setEditingId] = useState(null);
   const [submissions, setSubmissions] = useState([]);
   const [selectedAssignment, setSelectedAssignment] = useState(null);
 
@@ -28,16 +30,41 @@ const TeacherDashboard = () => {
     }
   };
 
-  const handleCreate = async (e) => {
+  const handleSave = async (e) => {
     e.preventDefault();
     try {
-      await client.post('/assignments', newAssignment);
+      if (isEditing) {
+        await client.put(`/assignments/${editingId}`, newAssignment);
+      } else {
+        await client.post('/assignments', newAssignment);
+      }
       setShowCreateModal(false);
+      setIsEditing(false);
+      setEditingId(null);
       setNewAssignment({ title: '', description: '', dueDate: '' });
       fetchAssignments();
     } catch (err) {
-      console.error('Error creating assignment', err);
+      console.error('Error saving assignment', err);
+      alert(err.response?.data?.message || 'Error saving assignment');
     }
+  };
+
+  const openEditModal = (assignment) => {
+    setNewAssignment({
+      title: assignment.title,
+      description: assignment.description,
+      dueDate: assignment.dueDate.split('T')[0] // Format for date input
+    });
+    setEditingId(assignment.id);
+    setIsEditing(true);
+    setShowCreateModal(true);
+  };
+
+  const openCreateModal = () => {
+    setNewAssignment({ title: '', description: '', dueDate: '' });
+    setIsEditing(false);
+    setEditingId(null);
+    setShowCreateModal(true);
   };
 
   const handleStatusChange = async (id, status) => {
@@ -92,7 +119,7 @@ const TeacherDashboard = () => {
             <p className="text-gray-500 mt-1 uppercase text-xs font-bold tracking-widest pl-4">Manage your teaching workflow</p>
           </div>
           <button 
-            onClick={() => setShowCreateModal(true)}
+            onClick={openCreateModal}
             className="inline-flex items-center px-6 py-3 border border-transparent rounded-xl shadow-lg text-white bg-primary hover:bg-primary-dark transition-all transform hover:-translate-y-0.5 active:translate-y-0 font-bold uppercase text-xs tracking-widest"
           >
             <Plus className="w-5 h-5 mr-2" />
@@ -200,6 +227,9 @@ const TeacherDashboard = () => {
                     <td className="px-6 py-5 text-right space-x-2">
                        {assignment.status === 'Draft' && (
                          <>
+                          <button onClick={() => openEditModal(assignment)} className="p-2 text-gray-400 hover:text-primary hover:bg-red-50 rounded-lg transition-all" title="Edit Draft">
+                            <Edit3 className="w-4 h-4" />
+                          </button>
                           <button onClick={() => handleDelete(assignment.id)} className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all" title="Delete Draft">
                             <Trash2 className="w-4 h-4" />
                           </button>
@@ -237,17 +267,20 @@ const TeacherDashboard = () => {
         <div className="fixed inset-0 z-50 overflow-y-auto bg-black/50 flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden border border-gray-100">
             <div className="bg-primary px-8 py-8 text-white relative">
-              <h2 className="text-2xl font-bold uppercase tracking-widest">New Assignment</h2>
-              <p className="text-white/70 text-xs font-bold mt-1 tracking-wider uppercase">Set up a new task for your students</p>
+              <h2 className="text-2xl font-bold uppercase tracking-widest">{isEditing ? 'Edit Assignment' : 'New Assignment'}</h2>
+              <p className="text-white/70 text-xs font-bold mt-1 tracking-wider uppercase">
+                {isEditing ? 'Modify your assignment details' : 'Set up a new task for your students'}
+              </p>
               <button onClick={() => setShowCreateModal(false)} className="absolute top-8 right-8 text-white/50 hover:text-white transition-colors">
                 <Plus className="w-6 h-6 rotate-45" />
               </button>
             </div>
-            <form onSubmit={handleCreate} className="p-8 space-y-6">
+            <form onSubmit={handleSave} className="p-8 space-y-6">
               <div>
                 <label className="block text-[10px] uppercase font-bold text-gray-400 mb-2 tracking-widest">Assignment Title</label>
                 <input 
                   required
+                  value={newAssignment.title}
                   placeholder="E.g. React Fundamentals Quiz"
                   className="w-full px-4 py-3 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-primary text-gray-800 font-bold placeholder:text-gray-300 transition-all"
                   onChange={e => setNewAssignment({...newAssignment, title: e.target.value})}
@@ -258,6 +291,7 @@ const TeacherDashboard = () => {
                 <textarea 
                   required
                   rows="3"
+                  value={newAssignment.description}
                   placeholder="Provide details about the assignment..."
                   className="w-full px-4 py-3 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-primary text-gray-800 font-bold placeholder:text-gray-300 transition-all"
                   onChange={e => setNewAssignment({...newAssignment, description: e.target.value})}
@@ -267,12 +301,14 @@ const TeacherDashboard = () => {
                 <label className="block text-[10px] uppercase font-bold text-gray-400 mb-2 tracking-widest">Due Date</label>
                 <div className="relative group">
                   <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none transition-colors group-focus-within:text-primary text-gray-300">
-                    <Clock className="w-5 h-5" />
+                    <Calendar className="w-5 h-5" />
                   </div>
                   <input 
                     type="date"
                     required
-                    className="w-full pl-12 pr-4 py-3 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-primary text-gray-800 font-bold transition-all"
+                    value={newAssignment.dueDate}
+                    onClick={(e) => e.target.showPicker && e.target.showPicker()}
+                    className="w-full pl-12 pr-4 py-3 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-primary text-gray-800 font-bold cursor-pointer transition-all"
                     onChange={e => setNewAssignment({...newAssignment, dueDate: e.target.value})}
                   />
                   <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none text-gray-300">
@@ -284,7 +320,7 @@ const TeacherDashboard = () => {
                 type="submit" 
                 className="w-full py-4 bg-primary text-white rounded-2xl shadow-lg hover:bg-primary-dark transition-all transform hover:-translate-y-0.5 font-black uppercase text-sm tracking-[0.2em]"
               >
-                Create Assignment
+                {isEditing ? 'Save Changes' : 'Create Assignment'}
               </button>
             </form>
           </div>
