@@ -105,7 +105,8 @@ const TeacherDashboard = () => {
     e.preventDefault();
     setIsUpdatingProfile(true);
     try {
-      await updateProfile(profileData.name, profileData.subject);
+      const finalSubject = profileData.subject === 'Other' ? profileData.customSubject : profileData.subject;
+      await updateProfile(profileData.name, finalSubject);
       setShowProfileModal(false);
       fetchAssignments(); // Refresh to catch any new assignments in the new subject
     } catch (err) {
@@ -412,8 +413,26 @@ const TeacherDashboard = () => {
                     <option value="English">English</option>
                     <option value="History">History</option>
                     <option value="Art">Visual Arts</option>
+                    <option value="Other">Other...</option>
                   </select>
                 </div>
+                {profileData.subject === 'Other' && (
+                  <div className="mt-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                    <label className="block text-[10px] uppercase font-black text-gray-400 mb-2 tracking-widest pl-1">Name Your Subject</label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400">
+                        <Plus className="w-5 h-5" />
+                      </div>
+                      <input 
+                        required
+                        value={profileData.customSubject || ''}
+                        placeholder="E.g. Computer Science"
+                        className="w-full pl-12 pr-4 py-3 bg-gray-50 border-none rounded-xl focus:ring-4 focus:ring-primary/10 text-gray-800 font-bold placeholder:text-gray-300 transition-all"
+                        onChange={e => setProfileData({...profileData, customSubject: e.target.value})}
+                      />
+                    </div>
+                  </div>
+                )}
                 <p className="text-[9px] text-gray-400 font-bold uppercase mt-2 leading-relaxed italic pl-1">
                   * Changing your subject will immediately show you assignments from colleagues in the new department.
                 </p>

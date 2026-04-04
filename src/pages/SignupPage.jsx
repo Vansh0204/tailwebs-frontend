@@ -13,7 +13,8 @@ const SignupPage = () => {
 
   const onSubmit = async (data) => {
     try {
-      await signup(data.name, data.email, data.password, data.role, data.subject);
+      const finalSubject = data.subject === 'Other' ? data.customSubject : data.subject;
+      await signup(data.name, data.email, data.password, data.role, finalSubject);
       setSuccess(true);
       setTimeout(() => {
         navigate('/login');
@@ -139,9 +140,27 @@ const SignupPage = () => {
                     <option value="English">English</option>
                     <option value="History">History</option>
                     <option value="Art">Visual Arts</option>
+                    <option value="Other">Other...</option>
                   </select>
                 </div>
                 {errors.subject && <p className="mt-1 text-xs text-red-500">{errors.subject.message}</p>}
+              </div>
+            )}
+
+            {selectedRole === 'teacher' && watch('subject') === 'Other' && (
+              <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+                <label className="block text-[10px] uppercase font-black text-gray-400 mb-2 tracking-widest pl-1">Name Your Subject</label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <BookOpen className="h-5 w-5 text-gray-400" />
+                  </div>
+                  <input
+                    {...register('customSubject', { required: 'Please name your custom subject' })}
+                    className={`block w-full pl-10 pr-3 py-3 border ${errors.customSubject ? 'border-red-500' : 'border-gray-300'} rounded-lg leading-5 bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all text-gray-900 font-medium`}
+                    placeholder="E.g. Computer Science"
+                  />
+                </div>
+                {errors.customSubject && <p className="mt-1 text-xs text-red-500">{errors.customSubject.message}</p>}
               </div>
             )}
 
