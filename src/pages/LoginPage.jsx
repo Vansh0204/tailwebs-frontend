@@ -98,25 +98,10 @@ const LoginPage = () => {
             </p>
           </div>
 
-          <div className="mt-8 pt-6 border-t border-gray-100">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="text-center p-3 rounded-lg border border-gray-50 bg-gray-50/50">
-                <span className="block text-[10px] uppercase font-bold text-gray-400 mb-1">Teacher access</span>
-                <p className="text-xs text-gray-600 font-mono">teacher@tailwebs.com</p>
-                <p className="text-xs text-gray-600 font-mono">password</p>
-              </div>
-              <div className="text-center p-3 rounded-lg border border-gray-50 bg-gray-50/50">
-                <span className="block text-[10px] uppercase font-bold text-gray-400 mb-1">Student access</span>
-                <p className="text-xs text-gray-600 font-mono">student@tailwebs.com</p>
-                <p className="text-xs text-gray-600 font-mono">password</p>
-              </div>
-            </div>
-          </div>
+          <p className="mt-8 text-center text-sm text-gray-400">
+            © 2026 Tailwebs Technologies. All rights reserved.
+          </p>
         </div>
-
-        <p className="mt-8 text-center text-sm text-gray-400">
-          © 2026 Tailwebs Technologies. All rights reserved.
-        </p>
       </div>
     </div>
   );
