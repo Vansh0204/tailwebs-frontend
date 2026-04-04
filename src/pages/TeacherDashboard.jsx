@@ -397,40 +397,72 @@ const TeacherDashboard = () => {
               </div>
 
               <div>
-                <label className="block text-[10px] uppercase font-black text-gray-400 mb-2 tracking-widest pl-1">Teaching Subject</label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400">
-                    <BookOpen className="w-5 h-5" />
-                  </div>
-                  <select 
-                    required
-                    value={profileData.subject}
-                    className="w-full pl-12 pr-4 py-3 bg-gray-50 border-none rounded-xl focus:ring-4 focus:ring-primary/10 text-gray-800 font-bold appearance-none transition-all"
-                    onChange={e => setProfileData({...profileData, subject: e.target.value})}
-                  >
-                    <option value="Maths">Mathematics</option>
-                    <option value="Science">Science</option>
-                    <option value="English">English</option>
-                    <option value="History">History</option>
-                    <option value="Art">Visual Arts</option>
-                    <option value="Other">Other...</option>
-                  </select>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-[10px] uppercase font-black text-gray-400 tracking-widest pl-1">Teaching Subject</label>
+                  {!isAddingNewSubject && (
+                    <button 
+                      type="button"
+                      onClick={() => setIsAddingNewSubject(true)}
+                      className="text-[10px] font-black uppercase text-primary hover:underline flex items-center gap-1"
+                    >
+                      <Plus className="w-3 h-3" /> Add New
+                    </button>
+                  )}
                 </div>
-                {profileData.subject === 'Other' && (
-                  <div className="mt-4 animate-in fade-in slide-in-from-top-2 duration-300">
-                    <label className="block text-[10px] uppercase font-black text-gray-400 mb-2 tracking-widest pl-1">Name Your Subject</label>
+
+                {isAddingNewSubject ? (
+                  <div className="space-y-3">
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400">
-                        <Plus className="w-5 h-5" />
+                        <BookOpen className="w-5 h-5" />
                       </div>
                       <input 
-                        required
-                        value={profileData.customSubject || ''}
+                        autoFocus
+                        value={newSubjectName}
                         placeholder="E.g. Computer Science"
-                        className="w-full pl-12 pr-4 py-3 bg-gray-50 border-none rounded-xl focus:ring-4 focus:ring-primary/10 text-gray-800 font-bold placeholder:text-gray-300 transition-all"
-                        onChange={e => setProfileData({...profileData, customSubject: e.target.value})}
+                        className="w-full pl-12 pr-4 py-3 bg-gray-50 border-none rounded-xl focus:ring-4 focus:ring-primary/10 text-gray-800 font-bold placeholder:text-gray-300 transition-all font-sans"
+                        onChange={e => setNewSubjectName(e.target.value)}
                       />
                     </div>
+                    <div className="flex gap-2">
+                      <button 
+                        type="button" 
+                        onClick={async () => {
+                          if (!newSubjectName.trim()) return;
+                          try {
+                            await addSubject(newSubjectName.trim());
+                            setProfileData({...profileData, subject: newSubjectName.trim()});
+                            setIsAddingNewSubject(false);
+                            setNewSubjectName('');
+                          } catch (err) { alert('Error adding subject'); }
+                        }}
+                        className="flex-1 py-2 bg-primary text-white text-[10px] font-black uppercase tracking-widest rounded-lg flex items-center justify-center gap-2"
+                      >
+                        <Check className="w-3 h-3" /> Create & Select
+                      </button>
+                      <button 
+                        type="button" 
+                        onClick={() => setIsAddingNewSubject(false)}
+                        className="px-4 py-2 bg-gray-100 text-gray-500 text-[10px] font-black uppercase tracking-widest rounded-lg"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400">
+                      <BookOpen className="w-5 h-5" />
+                    </div>
+                    <select 
+                      required
+                      value={profileData.subject}
+                      className="w-full pl-12 pr-4 py-3 bg-gray-50 border-none rounded-xl focus:ring-4 focus:ring-primary/10 text-gray-800 font-bold appearance-none transition-all"
+                      onChange={e => setProfileData({...profileData, subject: e.target.value})}
+                    >
+                      <option value="">Select Department</option>
+                      {subjects.map(s => <option key={s} value={s}>{s}</option>)}
+                    </select>
                   </div>
                 )}
                 <p className="text-[9px] text-gray-400 font-bold uppercase mt-2 leading-relaxed italic pl-1">

@@ -14,6 +14,20 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [subjects, setSubjects] = useState(['Maths', 'Science', 'English', 'History', 'Art']);
+  const [subjectsLoading, setSubjectsLoading] = useState(false);
+
+  const fetchSubjects = async () => {
+    try {
+      setSubjectsLoading(true);
+      const { data } = await client.get('/subjects');
+      setSubjects(data);
+    } catch (err) {
+      console.error('Error fetching subjects', err);
+    } finally {
+      setSubjectsLoading(false);
+    }
+  };
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
@@ -21,6 +35,7 @@ export const AuthProvider = ({ children }) => {
     if (storedUser && storedToken) {
       setUser(JSON.parse(storedUser));
     }
+    fetchSubjects();
     setLoading(false);
   }, []);
 
@@ -47,6 +62,17 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const addSubject = async (name) => {
+    try {
+      const { data } = await client.post('/subjects', { name });
+      setSubjects(data);
+      return data;
+    } catch (err) {
+      console.error('Error adding subject', err);
+      throw err;
+    }
+  };
+
   const updateProfile = async (name, subject) => {
     try {
       const { data } = await client.put('/auth/profile', { name, subject });
@@ -67,7 +93,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, signup, logout, updateProfile, loading }}>
+    <AuthContext.Provider value={{ user, login, signup, logout, updateProfile, subjects, subjectsLoading, fetchSubjects, addSubject, loading }}>
       {children}
     </AuthContext.Provider>
   );

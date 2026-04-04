@@ -2,19 +2,20 @@ import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
-import { Mail, Lock, User, UserPlus, ShieldCheck, GraduationCap, Eye, EyeOff, BookOpen } from 'lucide-react';
+import { Mail, Lock, User, UserPlus, ShieldCheck, GraduationCap, Eye, EyeOff, BookOpen, Plus, Check } from 'lucide-react';
 
 const SignupPage = () => {
-  const { signup } = useAuth();
+  const { signup, subjects, addSubject } = useAuth();
   const navigate = useNavigate();
-  const { register, handleSubmit, formState: { errors, isSubmitting }, watch, setError } = useForm();
+  const { register, handleSubmit, formState: { errors, isSubmitting }, watch, setError, setValue } = useForm();
   const [success, setSuccess] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [isAddingNewSubject, setIsAddingNewSubject] = useState(false);
+  const [newSubjectName, setNewSubjectName] = useState('');
 
   const onSubmit = async (data) => {
     try {
-      const finalSubject = data.subject === 'Other' ? data.customSubject : data.subject;
-      await signup(data.name, data.email, data.password, data.role, finalSubject);
+      await signup(data.name, data.email, data.password, data.role, data.subject);
       setSuccess(true);
       setTimeout(() => {
         navigate('/login');
@@ -24,6 +25,19 @@ const SignupPage = () => {
         type: 'manual', 
         message: err.response?.data?.message || 'Something went wrong. Please try again.' 
       });
+    }
+  };
+
+  const handleAddNewSubject = async (e) => {
+    e.preventDefault();
+    if (!newSubjectName.trim()) return;
+    try {
+      await addSubject(newSubjectName.trim());
+      setValue('subject', newSubjectName.trim());
+      setIsAddingNewSubject(false);
+      setNewSubjectName('');
+    } catch (err) {
+      alert('Error adding new subject');
     }
   };
 
@@ -125,42 +139,65 @@ const SignupPage = () => {
 
             {selectedRole === 'teacher' && (
               <div className="animate-in fade-in slide-in-from-top-2 duration-300">
-                <label className="block text-[10px] uppercase font-black text-gray-400 mb-2 tracking-widest pl-1">Primary Subject</label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <BookOpen className="h-5 w-5 text-gray-400" />
-                  </div>
-                  <select
-                    {...register('subject', { required: 'Subject is required for teachers' })}
-                    className={`block w-full pl-10 pr-3 py-3 border ${errors.subject ? 'border-red-500' : 'border-gray-300'} rounded-lg leading-5 bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all text-gray-900 font-medium appearance-none`}
-                  >
-                    <option value="">Select Department</option>
-                    <option value="Maths">Mathematics</option>
-                    <option value="Science">Science</option>
-                    <option value="English">English</option>
-                    <option value="History">History</option>
-                    <option value="Art">Visual Arts</option>
-                    <option value="Other">Other...</option>
-                  </select>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-[10px] uppercase font-black text-gray-400 tracking-widest pl-1">Primary Subject</label>
+                  {!isAddingNewSubject && (
+                    <button 
+                      type="button"
+                      onClick={() => setIsAddingNewSubject(true)}
+                      className="text-[10px] font-black uppercase text-primary hover:underline flex items-center gap-1"
+                    >
+                      <Plus className="w-3 h-3" /> Add New
+                    </button>
+                  )}
                 </div>
+                
+                {isAddingNewSubject ? (
+                  <div className="space-y-3">
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <BookOpen className="h-5 w-5 text-gray-400" />
+                      </div>
+                      <input
+                        autoFocus
+                        value={newSubjectName}
+                        onChange={(e) => setNewSubjectName(e.target.value)}
+                        className="block w-full pl-10 pr-3 py-3 border border-primary/30 rounded-lg leading-5 bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all text-gray-900 font-medium font-sans"
+                        placeholder="Subject Name (e.g. Robotics)"
+                      />
+                    </div>
+                    <div className="flex gap-2">
+                      <button 
+                        type="button" 
+                        onClick={handleAddNewSubject}
+                        className="flex-1 py-2 bg-primary text-white text-[10px] font-black uppercase tracking-widest rounded-lg flex items-center justify-center gap-2"
+                      >
+                        <Check className="w-3 h-3" /> Create & Select
+                      </button>
+                      <button 
+                        type="button" 
+                        onClick={() => setIsAddingNewSubject(false)}
+                        className="px-4 py-2 bg-gray-100 text-gray-500 text-[10px] font-black uppercase tracking-widest rounded-lg"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <BookOpen className="h-5 w-5 text-gray-400" />
+                    </div>
+                    <select
+                      {...register('subject', { required: 'Subject is required for teachers' })}
+                      className={`block w-full pl-10 pr-3 py-3 border ${errors.subject ? 'border-red-500' : 'border-gray-300'} rounded-lg leading-5 bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all text-gray-900 font-medium appearance-none`}
+                    >
+                      <option value="">Select Department</option>
+                      {subjects.map(s => <option key={s} value={s}>{s}</option>)}
+                    </select>
+                  </div>
+                )}
                 {errors.subject && <p className="mt-1 text-xs text-red-500">{errors.subject.message}</p>}
-              </div>
-            )}
-
-            {selectedRole === 'teacher' && watch('subject') === 'Other' && (
-              <div className="animate-in fade-in slide-in-from-top-2 duration-300">
-                <label className="block text-[10px] uppercase font-black text-gray-400 mb-2 tracking-widest pl-1">Name Your Subject</label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <BookOpen className="h-5 w-5 text-gray-400" />
-                  </div>
-                  <input
-                    {...register('customSubject', { required: 'Please name your custom subject' })}
-                    className={`block w-full pl-10 pr-3 py-3 border ${errors.customSubject ? 'border-red-500' : 'border-gray-300'} rounded-lg leading-5 bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all text-gray-900 font-medium`}
-                    placeholder="E.g. Computer Science"
-                  />
-                </div>
-                {errors.customSubject && <p className="mt-1 text-xs text-red-500">{errors.customSubject.message}</p>}
               </div>
             )}
 
