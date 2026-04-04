@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
 import client from '../api/client';
 import { useAuth } from '../context/AuthContext';
-import { FileText, Send, Clock, CheckCircle2, AlertCircle, Calendar, Plus, Paperclip, File, X } from 'lucide-react';
+import { FileText, Send, Clock, CheckCircle2, AlertCircle, Calendar, Plus, Paperclip, File, X, BookOpen, User } from 'lucide-react';
 import { format, isPast } from 'date-fns';
 
 const StudentDashboard = () => {
@@ -136,8 +136,15 @@ const StudentDashboard = () => {
                     )}
                   </div>
 
-                  <h3 className="text-xl font-bold text-gray-900 group-hover:text-primary transition-colors">{assignment.title}</h3>
-                  <p className="text-gray-500 text-sm mt-2 line-clamp-2 min-h-[40px]">{assignment.description}</p>
+                  <div className="flex items-center gap-2 mb-2">
+                    <h3 className="text-xl font-bold text-gray-900 group-hover:text-primary transition-colors">{assignment.title}</h3>
+                    {assignment.subject && (
+                      <span className="text-[8px] font-black uppercase tracking-[0.2em] bg-gray-100 text-gray-400 px-2 py-0.5 rounded border border-gray-200">
+                        {assignment.subject}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-gray-500 text-sm mt-1 line-clamp-2 min-h-[40px]">{assignment.description}</p>
                   
                   <div className="mt-8 pt-6 border-t border-gray-50 flex flex-col gap-3">
                     <div className="flex items-center justify-between">

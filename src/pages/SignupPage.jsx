@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
-import { Mail, Lock, User, UserPlus, ShieldCheck, GraduationCap, Eye, EyeOff } from 'lucide-react';
+import { Mail, Lock, User, UserPlus, ShieldCheck, GraduationCap, Eye, EyeOff, BookOpen } from 'lucide-react';
 
 const SignupPage = () => {
   const { signup } = useAuth();
@@ -13,7 +13,7 @@ const SignupPage = () => {
 
   const onSubmit = async (data) => {
     try {
-      await signup(data.name, data.email, data.password, data.role);
+      await signup(data.name, data.email, data.password, data.role, data.subject);
       setSuccess(true);
       setTimeout(() => {
         navigate('/login');
@@ -26,7 +26,10 @@ const SignupPage = () => {
     }
   };
 
+  const selectedRole = watch('role');
+
   if (success) {
+// ... existing success UI ...
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50">
         <div className="bg-white p-10 rounded-3xl shadow-xl text-center max-w-sm w-full mx-4 border border-green-100">
@@ -118,6 +121,29 @@ const SignupPage = () => {
               </div>
               {errors.role && <p className="mt-2 text-xs text-red-500">{errors.role.message}</p>}
             </div>
+
+            {selectedRole === 'teacher' && (
+              <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+                <label className="block text-[10px] uppercase font-black text-gray-400 mb-2 tracking-widest pl-1">Primary Subject</label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <BookOpen className="h-5 w-5 text-gray-400" />
+                  </div>
+                  <select
+                    {...register('subject', { required: 'Subject is required for teachers' })}
+                    className={`block w-full pl-10 pr-3 py-3 border ${errors.subject ? 'border-red-500' : 'border-gray-300'} rounded-lg leading-5 bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all text-gray-900 font-medium appearance-none`}
+                  >
+                    <option value="">Select Department</option>
+                    <option value="Maths">Mathematics</option>
+                    <option value="Science">Science</option>
+                    <option value="English">English</option>
+                    <option value="History">History</option>
+                    <option value="Art">Visual Arts</option>
+                  </select>
+                </div>
+                {errors.subject && <p className="mt-1 text-xs text-red-500">{errors.subject.message}</p>}
+              </div>
+            )}
 
             <div>
               <label className="block text-[10px] uppercase font-black text-gray-400 mb-2 tracking-widest pl-1">Password</label>

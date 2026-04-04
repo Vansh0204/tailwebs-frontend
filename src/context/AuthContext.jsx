@@ -37,12 +37,24 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const signup = async (name, email, password, role) => {
+  const signup = async (name, email, password, role, subject) => {
     try {
-      const { data } = await client.post('/auth/signup', { name, email, password, role });
+      const { data } = await client.post('/auth/signup', { name, email, password, role, subject });
       return data;
     } catch (err) {
       console.error('Signup failed', err);
+      throw err;
+    }
+  };
+
+  const updateProfile = async (name, subject) => {
+    try {
+      const { data } = await client.put('/auth/profile', { name, subject });
+      localStorage.setItem('user', JSON.stringify(data.user));
+      setUser(data.user);
+      return data.user;
+    } catch (err) {
+      console.error('Update profile failed', err);
       throw err;
     }
   };
@@ -55,7 +67,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, signup, logout, loading }}>
+    <AuthContext.Provider value={{ user, login, signup, logout, updateProfile, loading }}>
       {children}
     </AuthContext.Provider>
   );

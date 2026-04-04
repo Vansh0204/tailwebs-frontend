@@ -1,19 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
 import client from '../api/client';
-import { Plus, Filter, MoreVertical, FileText, CheckCircle2, Clock, Send, Trash2, Edit3, ArrowRight, File, User, Calendar } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { Plus, Filter, MoreVertical, FileText, CheckCircle2, Clock, Send, Trash2, Edit3, ArrowRight, File, User, Calendar, Settings, UserCircle, BookOpen, Save, X } from 'lucide-react';
 import { format } from 'date-fns';
 
 const TeacherDashboard = () => {
+  const { user, updateProfile } = useAuth();
   const [assignments, setAssignments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('All');
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
   const [newAssignment, setNewAssignment] = useState({ title: '', description: '', dueDate: '' });
+  const [profileData, setProfileData] = useState({ name: user?.name || '', subject: user?.subject || '' });
   const [isEditing, setIsEditing] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [submissions, setSubmissions] = useState([]);
   const [selectedAssignment, setSelectedAssignment] = useState(null);
+  const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
 
   useEffect(() => {
     fetchAssignments();
@@ -96,6 +101,20 @@ const TeacherDashboard = () => {
     }
   };
 
+  const handleUpdateProfile = async (e) => {
+    e.preventDefault();
+    setIsUpdatingProfile(true);
+    try {
+      await updateProfile(profileData.name, profileData.subject);
+      setShowProfileModal(false);
+      fetchAssignments(); // Refresh to catch any new assignments in the new subject
+    } catch (err) {
+      alert('Error updating profile');
+    } finally {
+      setIsUpdatingProfile(false);
+    }
+  };
+
   const filteredAssignments = filter === 'All' 
     ? assignments 
     : assignments.filter(a => a.status === filter);
@@ -118,13 +137,22 @@ const TeacherDashboard = () => {
             <h1 className="text-3xl font-bold text-gray-900 border-l-4 border-primary pl-4">Assignment Overview</h1>
             <p className="text-gray-500 mt-1 uppercase text-xs font-bold tracking-widest pl-4">Manage your teaching workflow</p>
           </div>
-          <button 
-            onClick={openCreateModal}
-            className="inline-flex items-center px-6 py-3 border border-transparent rounded-xl shadow-lg text-white bg-primary hover:bg-primary-dark transition-all transform hover:-translate-y-0.5 active:translate-y-0 font-bold uppercase text-xs tracking-widest"
-          >
-            <Plus className="w-5 h-5 mr-2" />
-            New Assignment
-          </button>
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={() => setShowProfileModal(true)}
+              className="inline-flex items-center px-5 py-3 border border-gray-200 rounded-xl shadow-sm text-gray-600 bg-white hover:bg-gray-50 transition-all font-bold uppercase text-xs tracking-widest"
+            >
+              <Settings className="w-4 h-4 mr-2" />
+              Settings
+            </button>
+            <button 
+              onClick={openCreateModal}
+              className="inline-flex items-center px-6 py-3 border border-transparent rounded-xl shadow-lg text-white bg-primary hover:bg-primary-dark transition-all transform hover:-translate-y-0.5 active:translate-y-0 font-bold uppercase text-xs tracking-widest"
+            >
+              <Plus className="w-5 h-5 mr-2" />
+              New Assignment
+            </button>
+          </div>
         </div>
 
         {/* Stats Grid */}
@@ -201,8 +229,16 @@ const TeacherDashboard = () => {
                           <FileText className="w-5 h-5" />
                         </div>
                         <div>
-                          <p className="text-sm font-bold text-gray-900">{assignment.title}</p>
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm font-bold text-gray-900">{assignment.title}</p>
+                            {assignment.subject && (
+                              <span className="text-[8px] font-black uppercase tracking-[0.2em] bg-primary/5 text-primary/60 px-2 py-0.5 rounded border border-primary/10">
+                                {assignment.subject}
+                              </span>
+                            )}
+                          </div>
                           <p className="text-xs text-gray-500 line-clamp-1">{assignment.description}</p>
+                          <p className="text-[10px] text-gray-400 font-bold uppercase mt-1">Publisher: {assignment.teacherName}</p>
                         </div>
                       </div>
                     </td>
@@ -327,7 +363,73 @@ const TeacherDashboard = () => {
         </div>
       )}
 
-      {/* Submissions Modal */}
+      {/* Profile Modal */}
+      {showProfileModal && (
+        <div className="fixed inset-0 z-[60] overflow-y-auto bg-black/60 flex items-center justify-center p-4 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border border-gray-100">
+            <div className="bg-gray-900 px-8 py-10 text-white relative text-center">
+               <div className="w-20 h-20 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-4 border border-white/10 backdrop-blur-md">
+                  <UserCircle className="w-12 h-12 text-primary" />
+               </div>
+               <h2 className="text-xl font-bold uppercase tracking-widest">Manage Profile</h2>
+               <p className="text-white/40 text-[10px] font-black uppercase tracking-widest mt-1">Update your personal details</p>
+               <button onClick={() => setShowProfileModal(false)} className="absolute top-8 right-8 text-white/30 hover:text-white transition-colors">
+                  <X className="w-6 h-6" />
+               </button>
+            </div>
+            
+            <form onSubmit={handleUpdateProfile} className="p-8 space-y-6">
+              <div>
+                <label className="block text-[10px] uppercase font-black text-gray-400 mb-2 tracking-widest pl-1">Full Name</label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400">
+                    <UserCircle className="w-5 h-5" />
+                  </div>
+                  <input 
+                    required
+                    value={profileData.name}
+                    placeholder="Enter your name"
+                    className="w-full pl-12 pr-4 py-3 bg-gray-50 border-none rounded-xl focus:ring-4 focus:ring-primary/10 text-gray-800 font-bold placeholder:text-gray-300 transition-all"
+                    onChange={e => setProfileData({...profileData, name: e.target.value})}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[10px] uppercase font-black text-gray-400 mb-2 tracking-widest pl-1">Teaching Subject</label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400">
+                    <BookOpen className="w-5 h-5" />
+                  </div>
+                  <select 
+                    required
+                    value={profileData.subject}
+                    className="w-full pl-12 pr-4 py-3 bg-gray-50 border-none rounded-xl focus:ring-4 focus:ring-primary/10 text-gray-800 font-bold appearance-none transition-all"
+                    onChange={e => setProfileData({...profileData, subject: e.target.value})}
+                  >
+                    <option value="Maths">Mathematics</option>
+                    <option value="Science">Science</option>
+                    <option value="English">English</option>
+                    <option value="History">History</option>
+                    <option value="Art">Visual Arts</option>
+                  </select>
+                </div>
+                <p className="text-[9px] text-gray-400 font-bold uppercase mt-2 leading-relaxed italic pl-1">
+                  * Changing your subject will immediately show you assignments from colleagues in the new department.
+                </p>
+              </div>
+
+              <button 
+                type="submit" 
+                disabled={isUpdatingProfile}
+                className="w-full py-4 bg-primary text-white rounded-2xl shadow-xl shadow-red-100 hover:bg-primary-dark transition-all transform hover:-translate-y-1 font-black uppercase text-xs tracking-widest disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {isUpdatingProfile ? 'Saving...' : <><Save className="w-4 h-4" /> Save Changes</>}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
       {selectedAssignment && (
         <div className="fixed inset-0 z-50 overflow-y-auto bg-black/50 flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden border border-gray-100 h-[80vh] flex flex-col">
