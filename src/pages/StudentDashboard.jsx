@@ -139,10 +139,16 @@ const StudentDashboard = () => {
                   <h3 className="text-xl font-bold text-gray-900 group-hover:text-primary transition-colors">{assignment.title}</h3>
                   <p className="text-gray-500 text-sm mt-2 line-clamp-2 min-h-[40px]">{assignment.description}</p>
                   
-                  <div className="mt-8 pt-6 border-t border-gray-50 flex items-center justify-between">
-                    <div className="flex items-center text-xs text-gray-400 font-bold uppercase tracking-tighter">
-                      <Calendar className="w-4 h-4 mr-1.5 text-gray-300" />
-                      Due {format(new Date(assignment.dueDate), 'MMM dd, yyyy')}
+                  <div className="mt-8 pt-6 border-t border-gray-50 flex flex-col gap-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center text-xs text-gray-400 font-bold uppercase tracking-tighter">
+                        <Calendar className="w-4 h-4 mr-1.5 text-gray-300" />
+                        Due {format(new Date(assignment.dueDate), 'MMM dd, yyyy')}
+                      </div>
+                      <div className="flex items-center text-[10px] font-black uppercase text-primary/60 tracking-widest">
+                        <User className="w-3.5 h-3.5 mr-1.5" />
+                        Prof. {assignment.teacherName}
+                      </div>
                     </div>
                     
                     {submission ? (
