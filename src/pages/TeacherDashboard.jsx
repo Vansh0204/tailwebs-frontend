@@ -2,11 +2,11 @@ import React, { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
 import client from '../api/client';
 import { useAuth } from '../context/AuthContext';
-import { Plus, Filter, MoreVertical, FileText, CheckCircle2, Clock, Send, Trash2, Edit3, ArrowRight, File, User, Calendar, Settings, UserCircle, BookOpen, Save, X } from 'lucide-react';
+import { Plus, Filter, MoreVertical, FileText, CheckCircle2, Clock, Send, Trash2, Edit3, ArrowRight, File, User, Calendar, Settings, UserCircle, BookOpen, Save, X, Check } from 'lucide-react';
 import { format } from 'date-fns';
 
 const TeacherDashboard = () => {
-  const { user, updateProfile } = useAuth();
+  const { user, updateProfile, subjects, addSubject } = useAuth();
   const [assignments, setAssignments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('All');
@@ -19,6 +19,8 @@ const TeacherDashboard = () => {
   const [submissions, setSubmissions] = useState([]);
   const [selectedAssignment, setSelectedAssignment] = useState(null);
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
+  const [isAddingNewSubject, setIsAddingNewSubject] = useState(false);
+  const [newSubjectName, setNewSubjectName] = useState('');
 
   useEffect(() => {
     fetchAssignments();
