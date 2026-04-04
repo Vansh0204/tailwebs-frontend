@@ -69,7 +69,7 @@ const TeacherDashboard = () => {
 
   const handleStatusChange = async (id, status) => {
     try {
-      await client.patch(`/assignments/${id}/status`, { status });
+      await client.put(`/assignments/${id}/status`, { status });
       fetchAssignments();
     } catch (err) {
       alert(err.response?.data?.message || 'Error updating status');
