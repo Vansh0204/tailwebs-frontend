@@ -265,12 +265,20 @@ const TeacherDashboard = () => {
               </div>
               <div>
                 <label className="block text-[10px] uppercase font-bold text-gray-400 mb-2 tracking-widest">Due Date</label>
-                <input 
-                  type="date"
-                  required
-                  className="w-full px-4 py-3 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-primary text-gray-800 font-bold transition-all"
-                  onChange={e => setNewAssignment({...newAssignment, dueDate: e.target.value})}
-                />
+                <div className="relative group">
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none transition-colors group-focus-within:text-primary text-gray-300">
+                    <Clock className="w-5 h-5" />
+                  </div>
+                  <input 
+                    type="date"
+                    required
+                    className="w-full pl-12 pr-4 py-3 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-primary text-gray-800 font-bold transition-all"
+                    onChange={e => setNewAssignment({...newAssignment, dueDate: e.target.value})}
+                  />
+                  <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none text-gray-300">
+                    {/* The native date picker icon will typically appear here in most browsers */}
+                  </div>
+                </div>
               </div>
               <button 
                 type="submit" 
