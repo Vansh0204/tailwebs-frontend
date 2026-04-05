@@ -46,8 +46,8 @@ const TeacherDashboard = () => {
       // Defensively handle both old (array) and new (object) backend formats
       let assignmentsData = data.assignments || (Array.isArray(data) ? data : []);
       
-      // AUTO-SORT BY DUE DATE (Soonest First)
-      assignmentsData = [...assignmentsData].sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
+      // AUTO-SORT BY NEWEST FIRST (Latest on top)
+      assignmentsData = [...assignmentsData].sort((a, b) => b.id - a.id);
 
       // If server provides meta, use it. Otherwise, calculate locally for the visible list.
       const metaData = data.meta || { 
