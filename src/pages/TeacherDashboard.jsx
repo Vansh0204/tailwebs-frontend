@@ -151,9 +151,14 @@ const TeacherDashboard = () => {
     }
   };
 
-  const filteredAssignments = filter === 'All' 
+  const filteredAssignmentsRaw = filter === 'All' 
     ? assignments 
     : assignments.filter(a => a.status === filter);
+
+  const startIndex = (pagination.page - 1) * pagination.limit;
+  const endIndex = startIndex + pagination.limit;
+  const filteredAssignments = filteredAssignmentsRaw.slice(startIndex, endIndex);
+  const totalPages = Math.ceil(filteredAssignmentsRaw.length / pagination.limit) || 1;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -356,6 +361,45 @@ const TeacherDashboard = () => {
             </table>
           </div>
 
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex items-center justify-between">
+              <div className="flex gap-2">
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((num) => (
+                  <button
+                    key={num}
+                    onClick={() => handlePageChange(num)}
+                    className={`min-w-[32px] h-8 flex items-center justify-center rounded-lg text-[10px] font-black tracking-widest transition-all ${
+                      pagination.page === num
+                        ? 'bg-primary text-white shadow-sm'
+                        : 'bg-white border border-gray-200 text-gray-500 hover:border-primary hover:text-primary'
+                    }`}
+                  >
+                    {num}
+                  </button>
+                ))}
+              </div>
+              <div className="flex gap-2 text-gray-400 font-mono text-[10px] items-center mr-4 uppercase font-black tracking-widest opacity-50">
+                Page {pagination.page} of {totalPages}
+              </div>
+              <div className="flex gap-2">
+                <button 
+                  onClick={() => handlePageChange(pagination.page - 1)}
+                  disabled={pagination.page === 1}
+                  className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-[10px] font-black uppercase tracking-widest text-gray-600 hover:bg-gray-50 disabled:opacity-50 transition-all"
+                >
+                  Prev
+                </button>
+                <button 
+                  onClick={() => handlePageChange(pagination.page + 1)}
+                  disabled={pagination.page === totalPages}
+                  className="px-4 py-2 bg-primary text-white rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-primary-dark shadow-sm disabled:opacity-50 transition-all font-sans"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </main>
 
