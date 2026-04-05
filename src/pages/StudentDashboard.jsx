@@ -29,12 +29,7 @@ const StudentDashboard = () => {
 
   const fetchData = async () => {
     try {
-      const assignmentsRes = await client.get('/assignments', {
-        params: {
-          page: pagination.page,
-          limit: pagination.limit
-        }
-      });
+      const assignmentsRes = await client.get('/assignments');
       
       const { data } = assignmentsRes;
       
