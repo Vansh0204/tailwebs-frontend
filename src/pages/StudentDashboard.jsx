@@ -60,6 +60,21 @@ const StudentDashboard = () => {
           submissionMap[assignmentsData[index].id] = res.data;
         }
       });
+
+      // INTELLIGENT SORT: Pending (Soonest Due) -> Submitted (At the End)
+      const prioritizedAssignments = [...assignmentsData].sort((a, b) => {
+        const aSubmitted = !!submissionMap[a.id];
+        const bSubmitted = !!submissionMap[b.id];
+        
+        // If one is submitted and the other isn't, move submitted to end
+        if (aSubmitted && !bSubmitted) return 1;
+        if (!aSubmitted && bSubmitted) return -1;
+        
+        // If both are same status, sort by Due Date
+        return new Date(a.dueDate) - new Date(b.dueDate);
+      });
+      
+      setAssignments(prioritizedAssignments);
       setSubmissions(submissionMap);
     } catch (err) {
       console.error('Error fetching data', err);
