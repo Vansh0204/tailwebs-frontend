@@ -10,7 +10,6 @@ const TeacherDashboard = () => {
   const [assignments, setAssignments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('All');
-  const [pagination, setPagination] = useState({ page: 1, totalPages: 1, limit: 10 });
   const [meta, setMeta] = useState({ total: 0, published: 0, drafts: 0, totalSubmissions: 0 });
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
@@ -32,16 +31,11 @@ const TeacherDashboard = () => {
       socket.on('assignments-changed', fetchAssignments);
       return () => socket.off('assignments-changed', fetchAssignments);
     }
-  }, [socket, pagination.page, filter]);
+  }, [socket, filter]);
 
   const fetchAssignments = async () => {
     try {
-      const { data } = await client.get('/assignments', {
-        params: {
-          page: pagination.page,
-          limit: pagination.limit
-        }
-      });
+      const { data } = await client.get('/assignments');
       
       // Defensively handle both old (array) and new (object) backend formats
       let assignmentsData = data.assignments || (Array.isArray(data) ? data : []);
@@ -57,11 +51,8 @@ const TeacherDashboard = () => {
         totalSubmissions: assignmentsData.reduce((acc, curr) => acc + (curr.submissionCount || 0), 0)
       };
 
-      const totalPages = data.pagination?.totalPages || Math.ceil((data.pagination?.totalItems || assignmentsData.length) / pagination.limit) || 1;
-
       setAssignments(assignmentsData);
       setMeta(metaData);
-      setPagination(prev => ({ ...prev, totalPages }));
     } catch (err) {
       console.error('Error fetching assignments', err);
     } finally {
@@ -69,10 +60,6 @@ const TeacherDashboard = () => {
     }
   };
 
-  const handlePageChange = (newPage) => {
-    if (newPage < 1 || newPage > pagination.totalPages) return;
-    setPagination(prev => ({ ...prev, page: newPage }));
-  };
 
   const handleSave = async (e) => {
     e.preventDefault();
@@ -155,19 +142,9 @@ const TeacherDashboard = () => {
     }
   };
 
-  const filteredAssignmentsRaw = filter === 'All' 
+  const filteredAssignments = filter === 'All' 
     ? assignments 
     : assignments.filter(a => a.status === filter);
-
-  // If the backend is ALREADY paginating, assignments is already sliced. 
-  // If not (legacy backend), we slice it here so the UI works perfectly immediately.
-  const isServerPaginated = assignments.length <= pagination.limit && pagination.totalPages > 1;
-  const startIndex = (pagination.page - 1) * pagination.limit;
-  const endIndex = startIndex + pagination.limit;
-  
-  const filteredAssignments = isServerPaginated 
-    ? filteredAssignmentsRaw 
-    : filteredAssignmentsRaw.slice(startIndex, endIndex);
 
   return (
     <div className="min-h-screen bg-gray-50">
