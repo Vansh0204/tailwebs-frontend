@@ -10,6 +10,8 @@ const TeacherDashboard = () => {
   const [assignments, setAssignments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('All');
+  const [pagination, setPagination] = useState({ page: 1, totalPages: 1, limit: 10 });
+  const [meta, setMeta] = useState({ total: 0, published: 0, drafts: 0, totalSubmissions: 0 });
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [newAssignment, setNewAssignment] = useState({ title: '', description: '', dueDate: '' });
@@ -30,17 +32,31 @@ const TeacherDashboard = () => {
       socket.on('assignments-changed', fetchAssignments);
       return () => socket.off('assignments-changed', fetchAssignments);
     }
-  }, [socket]);
+  }, [socket, pagination.page, filter]);
 
   const fetchAssignments = async () => {
     try {
-      const { data } = await client.get('/assignments');
-      setAssignments(data);
+      const { data } = await client.get('/assignments', {
+        params: {
+          page: pagination.page,
+          limit: pagination.limit
+          // Filters can also be passed here if backend supports it specifically, 
+          // but for now we filter locally to keep the logic simple with our in-memory store
+        }
+      });
+      setAssignments(data.assignments);
+      setMeta(data.meta);
+      setPagination(prev => ({ ...prev, totalPages: data.pagination.totalPages }));
     } catch (err) {
       console.error('Error fetching assignments', err);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handlePageChange = (newPage) => {
+    if (newPage < 1 || newPage > pagination.totalPages) return;
+    setPagination(prev => ({ ...prev, page: newPage }));
   };
 
   const handleSave = async (e) => {
@@ -128,13 +144,6 @@ const TeacherDashboard = () => {
     ? assignments 
     : assignments.filter(a => a.status === filter);
 
-  const stats = {
-    total: assignments.length,
-    draft: assignments.filter(a => a.status === 'Draft').length,
-    published: assignments.filter(a => a.status === 'Published').length,
-    completed: assignments.filter(a => a.status === 'Completed').length
-  };
-
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
@@ -167,10 +176,10 @@ const TeacherDashboard = () => {
         {/* Stats Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
           {[
-            { label: 'Total Assignments', value: stats.total, icon: FileText, color: 'text-blue-600', bg: 'bg-blue-50' },
-            { label: 'Drafts', value: stats.draft, icon: Clock, color: 'text-amber-600', bg: 'bg-amber-50' },
-            { label: 'Published', value: stats.published, icon: Send, color: 'text-green-600', bg: 'bg-green-50' },
-            { label: 'Completed', value: stats.completed, icon: CheckCircle2, color: 'text-primary', bg: 'bg-red-50' }
+            { label: 'Total Assignments', value: meta.total, icon: FileText, color: 'text-blue-600', bg: 'bg-blue-50' },
+            { label: 'Drafts', value: meta.drafts, icon: Clock, color: 'text-amber-600', bg: 'bg-amber-50' },
+            { label: 'Published', value: meta.published, icon: Send, color: 'text-green-600', bg: 'bg-green-50' },
+            { label: 'Submissions', value: meta.totalSubmissions, icon: CheckCircle2, color: 'text-primary', bg: 'bg-red-50' }
           ].map((stat, i) => (
             <div key={i} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex items-center gap-4 transition-all hover:shadow-md">
               <div className={`${stat.bg} ${stat.color} p-3 rounded-xl`}>
@@ -178,7 +187,7 @@ const TeacherDashboard = () => {
               </div>
               <div>
                 <p className="text-2xl font-bold text-gray-900 leading-none">{stat.value}</p>
-                <p className="text-xs uppercase font-bold text-gray-400 mt-1">{stat.label}</p>
+                <p className="text-[10px] uppercase font-black text-gray-400 mt-2 tracking-widest">{stat.label}</p>
               </div>
             </div>
           ))}
@@ -186,17 +195,20 @@ const TeacherDashboard = () => {
 
         {/* Filters & Content */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-50 flex items-center justify-between bg-gray-50/30">
+          <div className="px-6 py-4 border-b border-gray-50 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gray-50/30">
             <div className="flex items-center gap-2">
               <Filter className="w-4 h-4 text-gray-400" />
               <span className="text-sm font-bold text-gray-500 uppercase tracking-wider">Filter By Status</span>
             </div>
-            <div className="flex bg-gray-100 p-1 rounded-lg">
+            <div className="flex bg-gray-100 p-1 rounded-lg self-start">
               {['All', 'Draft', 'Published', 'Completed'].map((s) => (
                 <button
                   key={s}
-                  onClick={() => setFilter(s)}
-                  className={`px-4 py-1.5 rounded-md text-xs font-bold transition-all uppercase tracking-widest ${
+                  onClick={() => {
+                    setFilter(s);
+                    setPagination(prev => ({ ...prev, page: 1 }));
+                  }}
+                  className={`px-4 py-1.5 rounded-md text-[10px] font-black transition-all uppercase tracking-widest ${
                     filter === s 
                       ? 'bg-white text-primary shadow-sm' 
                       : 'text-gray-500 hover:text-gray-700'
@@ -214,6 +226,7 @@ const TeacherDashboard = () => {
                 <tr>
                   <th className="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-widest">Assignment</th>
                   <th className="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-widest">Due Date</th>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-widest">Submissions</th>
                   <th className="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-widest">Status</th>
                   <th className="px-6 py-4 text-right text-xs font-bold text-gray-400 uppercase tracking-widest">Actions</th>
                 </tr>
@@ -221,11 +234,11 @@ const TeacherDashboard = () => {
               <tbody className="divide-y divide-gray-50">
                 {loading ? (
                    <tr>
-                    <td colSpan="4" className="px-6 py-10 text-center text-gray-400">Loading assignments...</td>
+                    <td colSpan="5" className="px-6 py-10 text-center text-gray-400">Loading assignments...</td>
                    </tr>
                 ) : filteredAssignments.length === 0 ? (
                   <tr>
-                    <td colSpan="4" className="px-6 py-10 text-center text-gray-400 font-medium italic">No assignments found matching your filter.</td>
+                    <td colSpan="5" className="px-6 py-10 text-center text-gray-400 font-medium italic">No assignments found matching your filter.</td>
                   </tr>
                 ) : filteredAssignments.map((assignment) => (
                   <tr key={assignment.id} className="hover:bg-gray-50/50 transition-colors group">
@@ -255,6 +268,33 @@ const TeacherDashboard = () => {
                       <span className="text-xs font-bold text-gray-600 bg-gray-100 px-3 py-1 rounded-full uppercase tracking-tighter">
                         {format(new Date(assignment.dueDate), 'MMM dd, yyyy')}
                       </span>
+                    </td>
+                    <td className="px-6 py-5">
+                      <button 
+                        onClick={() => viewSubmissions(assignment)}
+                        className="flex items-center gap-2 group/sub cursor-pointer"
+                      >
+                         <div className="flex -space-x-2">
+                            {[1, 2, 3].slice(0, assignment.submissionCount).map((_, i) => (
+                              <div key={i} className="w-6 h-6 rounded-full bg-white border-2 border-white ring-1 ring-gray-100 flex items-center justify-center text-[8px] font-bold text-gray-400">
+                                <User className="w-3 h-3" />
+                              </div>
+                            ))}
+                            {assignment.submissionCount > 3 && (
+                              <div className="w-6 h-6 rounded-full bg-gray-50 border-2 border-white ring-1 ring-gray-100 flex items-center justify-center text-[8px] font-black text-primary">
+                                +{assignment.submissionCount - 3}
+                              </div>
+                            )}
+                            {assignment.submissionCount === 0 && (
+                               <span className="text-[10px] font-black text-gray-300 uppercase tracking-widest pl-2">None yet</span>
+                            )}
+                         </div>
+                         {assignment.submissionCount > 0 && (
+                           <span className="text-[10px] font-black text-primary uppercase ml-2 group-hover/sub:underline">
+                             {assignment.submissionCount} Submissions
+                           </span>
+                         )}
+                      </button>
                     </td>
                     <td className="px-6 py-5">
                       <span className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border ${
@@ -304,6 +344,31 @@ const TeacherDashboard = () => {
               </tbody>
             </table>
           </div>
+
+          {/* Pagination Controls */}
+          {pagination.totalPages > 1 && (
+            <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex items-center justify-between">
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                Page {pagination.page} of {pagination.totalPages}
+              </p>
+              <div className="flex gap-2">
+                <button 
+                  onClick={() => handlePageChange(pagination.page - 1)}
+                  disabled={pagination.page === 1}
+                  className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-[10px] font-black uppercase tracking-widest text-gray-600 hover:bg-gray-50 disabled:opacity-50 transition-all"
+                >
+                  Previous
+                </button>
+                <button 
+                  onClick={() => handlePageChange(pagination.page + 1)}
+                  disabled={pagination.page === pagination.totalPages}
+                  className="px-4 py-2 bg-primary text-white rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-primary-dark shadow-sm disabled:opacity-50 transition-all"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </main>
 

@@ -9,6 +9,7 @@ const StudentDashboard = () => {
   const { user, socket } = useAuth();
   const [assignments, setAssignments] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [pagination, setPagination] = useState({ page: 1, totalPages: 1, limit: 10 });
   const [selectedAssignment, setSelectedAssignment] = useState(null);
   const [answer, setAnswer] = useState('');
   const [selectedFile, setSelectedFile] = useState(null);
@@ -23,18 +24,23 @@ const StudentDashboard = () => {
       socket.on('assignments-changed', fetchData);
       return () => socket.off('assignments-changed', fetchData);
     }
-  }, [socket]);
+  }, [socket, pagination.page]);
 
   const fetchData = async () => {
     try {
-      const [assignmentsRes] = await Promise.all([
-        client.get('/assignments')
-      ]);
+      const assignmentsRes = await client.get('/assignments', {
+        params: {
+          page: pagination.page,
+          limit: pagination.limit
+        }
+      });
       
-      setAssignments(assignmentsRes.data);
+      const assignmentsData = assignmentsRes.data.assignments || [];
+      setAssignments(assignmentsData);
+      setPagination(prev => ({ ...prev, totalPages: assignmentsRes.data.pagination.totalPages }));
       
       // Fetch submissions for each assignment to check status
-      const submissionPromises = assignmentsRes.data.map(a => 
+      const submissionPromises = assignmentsData.map(a => 
         client.get(`/submissions/${a.id}`).catch(() => ({ data: null }))
       );
       
@@ -42,7 +48,7 @@ const StudentDashboard = () => {
       const submissionMap = {};
       submissionResults.forEach((res, index) => {
         if (res.data) {
-          submissionMap[assignmentsRes.data[index].id] = res.data;
+          submissionMap[assignmentsData[index].id] = res.data;
         }
       });
       setSubmissions(submissionMap);
@@ -51,6 +57,11 @@ const StudentDashboard = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handlePageChange = (newPage) => {
+    if (newPage < 1 || newPage > pagination.totalPages) return;
+    setPagination(prev => ({ ...prev, page: newPage }));
   };
 
   const handleSubmit = async (e) => {
@@ -198,6 +209,31 @@ const StudentDashboard = () => {
             );
           })}
         </div>
+
+        {/* Pagination Controls */}
+        {pagination.totalPages > 1 && (
+          <div className="mt-12 mb-6 flex items-center justify-between bg-white px-6 py-4 rounded-2xl border border-gray-100 shadow-sm">
+            <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">
+              Page {pagination.page} of {pagination.totalPages}
+            </p>
+            <div className="flex gap-2">
+              <button 
+                onClick={() => handlePageChange(pagination.page - 1)}
+                disabled={pagination.page === 1}
+                className="px-5 py-2.5 bg-white border border-gray-200 rounded-xl text-[10px] font-black uppercase tracking-widest text-gray-600 hover:bg-gray-50 disabled:opacity-50 transition-all"
+              >
+                Previous
+              </button>
+              <button 
+                onClick={() => handlePageChange(pagination.page + 1)}
+                disabled={pagination.page === pagination.totalPages}
+                className="px-5 py-2.5 bg-primary text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-primary-dark shadow-sm disabled:opacity-50 transition-all font-sans"
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        )}
       </main>
 
       {/* Submission Modal */}
