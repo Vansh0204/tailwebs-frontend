@@ -32,11 +32,25 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
     const storedToken = localStorage.getItem('token');
-    if (storedUser && storedToken) {
-      setUser(JSON.parse(storedUser));
-    }
-    fetchSubjects();
-    setLoading(false);
+    
+    const checkSession = async () => {
+      if (storedUser && storedToken) {
+        try {
+          // Verify with server if this user still exists (after restart)
+          const { data } = await client.get('/auth/me');
+          setUser(data);
+        } catch (err) {
+          console.log('Session expired or server restarted. Logging out.');
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          setUser(null);
+        }
+      }
+      fetchSubjects();
+      setLoading(false);
+    };
+
+    checkSession();
   }, []);
 
   const login = async (email, password) => {
