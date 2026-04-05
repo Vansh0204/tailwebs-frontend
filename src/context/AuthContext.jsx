@@ -1,7 +1,15 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import client from '../api/client';
+import { io } from 'socket.io-client';
 
 const AuthContext = createContext();
+
+const SOCKET_URL = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5001';
+const socket = io(SOCKET_URL, {
+  transports: ['websocket', 'polling'],
+  autoConnect: true,
+  reconnection: true
+});
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
@@ -12,7 +20,10 @@ export const useAuth = () => {
 };
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(() => {
+    const storedUser = localStorage.getItem('user');
+    return storedUser ? JSON.parse(storedUser) : null;
+  });
   const [loading, setLoading] = useState(true);
   const [subjects, setSubjects] = useState(['Maths', 'Science', 'English', 'History', 'Art']);
   const [subjectsLoading, setSubjectsLoading] = useState(false);
@@ -107,7 +118,11 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, signup, logout, updateProfile, subjects, subjectsLoading, fetchSubjects, addSubject, loading }}>
+    <AuthContext.Provider value={{ 
+      user, login, signup, logout, updateProfile, 
+      subjects, subjectsLoading, fetchSubjects, addSubject, 
+      loading, socket 
+    }}>
       {children}
     </AuthContext.Provider>
   );

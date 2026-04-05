@@ -6,7 +6,7 @@ import { FileText, Send, Clock, CheckCircle2, AlertCircle, Calendar, Plus, Paper
 import { format, isPast } from 'date-fns';
 
 const StudentDashboard = () => {
-  const { user } = useAuth();
+  const { user, socket } = useAuth();
   const [assignments, setAssignments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedAssignment, setSelectedAssignment] = useState(null);
@@ -17,7 +17,13 @@ const StudentDashboard = () => {
 
   useEffect(() => {
     fetchData();
-  }, []);
+
+    // Setup real-time auto-refresh
+    if (socket) {
+      socket.on('assignments-changed', fetchData);
+      return () => socket.off('assignments-changed', fetchData);
+    }
+  }, [socket]);
 
   const fetchData = async () => {
     try {

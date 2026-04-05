@@ -6,7 +6,7 @@ import { Plus, Filter, MoreVertical, FileText, CheckCircle2, Clock, Send, Trash2
 import { format } from 'date-fns';
 
 const TeacherDashboard = () => {
-  const { user, updateProfile, subjects, addSubject } = useAuth();
+  const { user, updateProfile, subjects, addSubject, socket } = useAuth();
   const [assignments, setAssignments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('All');
@@ -24,7 +24,13 @@ const TeacherDashboard = () => {
 
   useEffect(() => {
     fetchAssignments();
-  }, []);
+
+    // Setup real-time auto-refresh
+    if (socket) {
+      socket.on('assignments-changed', fetchAssignments);
+      return () => socket.off('assignments-changed', fetchAssignments);
+    }
+  }, [socket]);
 
   const fetchAssignments = async () => {
     try {
