@@ -9,7 +9,7 @@ const StudentDashboard = () => {
   const { user, socket } = useAuth();
   const [assignments, setAssignments] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [pagination, setPagination] = useState({ page: 1, totalPages: 1, limit: 10 });
+  const [pagination, setPagination] = useState({ page: 1, totalPages: 1, limit: 5 });
   const [selectedAssignment, setSelectedAssignment] = useState(null);
   const [answer, setAnswer] = useState('');
   const [selectedFile, setSelectedFile] = useState(null);
@@ -39,7 +39,7 @@ const StudentDashboard = () => {
       
       // Defensively handle both old (array) and new (object) backend formats
       const assignmentsData = data.assignments || (Array.isArray(data) ? data : []);
-      const totalPages = data.pagination?.totalPages || 1;
+      const totalPages = data.pagination?.totalPages || Math.ceil((data.pagination?.totalItems || assignmentsData.length) / pagination.limit) || 1;
       
       setAssignments(assignmentsData);
       setPagination(prev => ({ ...prev, totalPages }));
