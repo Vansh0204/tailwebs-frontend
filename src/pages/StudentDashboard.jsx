@@ -261,44 +261,42 @@ const StudentDashboard = () => {
         </div>
 
         {/* Pagination Controls */}
-        {totalPages > 1 && (
-          <div className="mt-12 mb-6 flex items-center justify-between bg-white px-6 py-4 rounded-2xl border border-gray-100 shadow-sm">
-            <div className="flex gap-2">
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((num) => (
-                <button
-                  key={num}
-                  onClick={() => handlePageChange(num)}
-                  className={`min-w-[32px] h-8 flex items-center justify-center rounded-lg text-[10px] font-black tracking-widest transition-all ${
-                    pagination.page === num
-                      ? 'bg-primary text-white shadow-sm'
-                      : 'bg-white border border-gray-200 text-gray-500 hover:border-primary hover:text-primary'
-                  }`}
-                >
-                  {num}
-                </button>
-              ))}
-            </div>
-            <div className="flex gap-2 text-gray-400 font-mono text-[10px] items-center mr-4 uppercase font-black tracking-[0.2em] opacity-50">
-              Page {pagination.page} of {totalPages}
-            </div>
-            <div className="flex gap-2">
-              <button 
-                onClick={() => handlePageChange(pagination.page - 1)}
-                disabled={pagination.page === 1}
-                className="px-5 py-2.5 bg-white border border-gray-200 rounded-xl text-[10px] font-black uppercase tracking-widest text-gray-600 hover:bg-gray-50 disabled:opacity-50 transition-all"
+        <div className="mt-12 mb-6 flex items-center justify-between bg-white px-6 py-4 rounded-2xl border border-gray-100 shadow-sm">
+          <div className="flex gap-2">
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((num) => (
+              <button
+                key={num}
+                onClick={() => handlePageChange(num)}
+                className={`min-w-[32px] h-8 flex items-center justify-center rounded-lg text-[10px] font-black tracking-widest transition-all ${
+                  pagination.page === num
+                    ? 'bg-primary text-white shadow-sm'
+                    : 'bg-white border border-gray-200 text-gray-500 hover:border-primary hover:text-primary'
+                }`}
               >
-                Prev
+                {num}
               </button>
-              <button 
-                onClick={() => handlePageChange(pagination.page + 1)}
-                disabled={pagination.page === totalPages}
-                className="px-5 py-2.5 bg-primary text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-primary-dark shadow-sm disabled:opacity-50 transition-all font-sans"
-              >
-                Next
-              </button>
-            </div>
+            ))}
           </div>
-        )}
+          <div className="flex gap-2 text-gray-400 font-mono text-[10px] items-center mr-4 uppercase font-black tracking-[0.2em] opacity-50">
+            Page {pagination.page} of {totalPages}
+          </div>
+          <div className="flex gap-2">
+            <button 
+              onClick={() => handlePageChange(pagination.page - 1)}
+              disabled={pagination.page === 1}
+              className="px-5 py-2.5 bg-white border border-gray-200 rounded-xl text-[10px] font-black uppercase tracking-widest text-gray-600 hover:bg-gray-50 disabled:opacity-50 transition-all"
+            >
+              Prev
+            </button>
+            <button 
+              onClick={() => handlePageChange(pagination.page + 1)}
+              disabled={pagination.page === totalPages}
+              className="px-5 py-2.5 bg-primary text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-primary-dark shadow-sm disabled:opacity-50 transition-all font-sans"
+            >
+              Next
+            </button>
+          </div>
+        </div>
       </main>
 
       {/* Submission Modal */}
