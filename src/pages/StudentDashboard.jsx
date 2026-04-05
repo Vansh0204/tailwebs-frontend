@@ -15,6 +15,7 @@ const StudentDashboard = () => {
   const [selectedFile, setSelectedFile] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [submissions, setSubmissions] = useState({}); // assignmentId -> submission
+  const [view, setView] = useState('pending'); // 'pending' or 'completed'
 
   useEffect(() => {
     fetchData();
@@ -40,9 +41,6 @@ const StudentDashboard = () => {
       // Defensively handle both old (array) and new (object) backend formats
       let assignmentsData = data.assignments || (Array.isArray(data) ? data : []);
       
-      // AUTO-SORT BY DUE DATE (Soonest First)
-      assignmentsData = [...assignmentsData].sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
-
       const totalPages = data.pagination?.totalPages || Math.ceil((data.pagination?.totalItems || assignmentsData.length) / pagination.limit) || 1;
       
       setAssignments(assignmentsData);
@@ -60,21 +58,6 @@ const StudentDashboard = () => {
           submissionMap[assignmentsData[index].id] = res.data;
         }
       });
-
-      // INTELLIGENT SORT: Pending (Soonest Due) -> Submitted (At the End)
-      const prioritizedAssignments = [...assignmentsData].sort((a, b) => {
-        const aSubmitted = !!submissionMap[a.id];
-        const bSubmitted = !!submissionMap[b.id];
-        
-        // If one is submitted and the other isn't, move submitted to end
-        if (aSubmitted && !bSubmitted) return 1;
-        if (!aSubmitted && bSubmitted) return -1;
-        
-        // If both are same status, sort by Due Date
-        return new Date(a.dueDate) - new Date(b.dueDate);
-      });
-      
-      setAssignments(prioritizedAssignments);
       setSubmissions(submissionMap);
     } catch (err) {
       console.error('Error fetching data', err);
@@ -115,35 +98,76 @@ const StudentDashboard = () => {
     }
   };
 
+  const filteredAssignments = assignments.filter(a => {
+    const isSubmitted = !!submissions[a.id];
+    return view === 'completed' ? isSubmitted : !isSubmitted;
+  }).sort((a, b) => {
+    if (view === 'completed') {
+      // Sort completed by submission date (newest first)
+      return new Date(submissions[b.id]?.submittedAt) - new Date(submissions[a.id]?.submittedAt);
+    }
+    // Sort pending by due date (soonest first)
+    return new Date(a.dueDate) - new Date(b.dueDate);
+  });
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
       
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-10 gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 border-l-4 border-primary pl-4">Hello, {user?.name}!</h1>
-            <p className="text-gray-500 mt-1 uppercase text-xs font-bold tracking-widest pl-4">Your current learning progress</p>
+          <div className="flex items-center gap-4">
+            {view === 'completed' && (
+              <button 
+                onClick={() => setView('pending')}
+                className="p-2 bg-white rounded-xl shadow-sm border border-gray-100 hover:bg-gray-50 text-gray-400 hover:text-primary transition-all"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            )}
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 border-l-4 border-primary pl-4">
+                {view === 'completed' ? 'Your Completed Work' : `Hello, ${user?.name}!`}
+              </h1>
+              <p className="text-gray-500 mt-1 uppercase text-xs font-bold tracking-widest pl-4">
+                {view === 'completed' ? 'Review your past successes' : 'Your current learning progress'}
+              </p>
+            </div>
           </div>
-          <div className="bg-white px-6 py-2 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4">
+
+          <div 
+            onClick={() => setView('completed')}
+            className={`group cursor-pointer bg-white px-6 py-4 rounded-2xl shadow-sm border flex items-center gap-4 transition-all hover:shadow-xl hover:-translate-y-1 ${
+              view === 'completed' ? 'border-primary ring-4 ring-primary/5' : 'border-gray-100'
+            }`}
+          >
              <div className="text-right">
-                <span className="block text-[10px] uppercase font-black text-gray-400">Total Completed</span>
-                <span className="text-sm font-bold text-primary">{Object.keys(submissions).length} Assignments</span>
+                <span className="block text-[10px] uppercase font-black text-gray-400 group-hover:text-primary transition-colors">Total Completed</span>
+                <span className="text-lg font-bold text-primary">{Object.keys(submissions).length} Assignments</span>
              </div>
              <div className="h-8 w-px bg-gray-100"></div>
-             <CheckCircle2 className="w-5 h-5 text-primary" />
+             <div className="w-10 h-10 rounded-full bg-primary/5 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all">
+                <CheckCircle2 className="w-6 h-6" />
+             </div>
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {loading ? (
              <div className="col-span-full text-center py-20 text-gray-400 italic">Finding your assignments...</div>
-          ) : assignments.length === 0 ? (
+          ) : filteredAssignments.length === 0 ? (
             <div className="col-span-full text-center py-20 bg-white rounded-3xl border-2 border-dashed border-gray-200">
                <AlertCircle className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-               <p className="text-gray-400 font-medium">No published assignments available at the moment.</p>
+               <p className="text-gray-400 font-medium">
+                {view === 'completed' ? "You haven't completed any assignments yet. Keep going!" : "No pending assignments! You're all caught up."}
+               </p>
+               {view === 'completed' && (
+                 <button onClick={() => setView('pending')} className="mt-4 text-primary font-bold uppercase text-[10px] tracking-widest hover:underline">
+                   View Dashboard
+                 </button>
+               )}
             </div>
-          ) : (assignments.length > pagination.limit ? assignments.slice((pagination.page - 1) * pagination.limit, pagination.page * pagination.limit) : assignments).map(assignment => {
+          ) : (filteredAssignments.length > pagination.limit ? filteredAssignments.slice((pagination.page - 1) * pagination.limit, pagination.page * pagination.limit) : filteredAssignments).map(assignment => {
             const submission = submissions[assignment.id];
             const isDue = isPast(new Date(assignment.dueDate));
             const isCompleted = assignment.status === 'Completed';
