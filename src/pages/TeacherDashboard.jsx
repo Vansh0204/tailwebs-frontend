@@ -10,6 +10,7 @@ const TeacherDashboard = () => {
   const [assignments, setAssignments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('All');
+  const [pagination, setPagination] = useState({ page: 1, totalPages: 1, limit: 10 });
   const [meta, setMeta] = useState({ total: 0, published: 0, drafts: 0, totalSubmissions: 0 });
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
@@ -31,11 +32,16 @@ const TeacherDashboard = () => {
       socket.on('assignments-changed', fetchAssignments);
       return () => socket.off('assignments-changed', fetchAssignments);
     }
-  }, [socket, filter]);
+  }, [socket, pagination.page, filter]);
 
   const fetchAssignments = async () => {
     try {
-      const { data } = await client.get('/assignments');
+      const { data } = await client.get('/assignments', {
+        params: {
+          page: pagination.page,
+          limit: pagination.limit
+        }
+      });
       
       // Defensively handle both old (array) and new (object) backend formats
       let assignmentsData = data.assignments || (Array.isArray(data) ? data : []);
@@ -51,13 +57,21 @@ const TeacherDashboard = () => {
         totalSubmissions: assignmentsData.reduce((acc, curr) => acc + (curr.submissionCount || 0), 0)
       };
 
+      const totalPages = data.pagination?.totalPages || Math.ceil((data.pagination?.totalItems || assignmentsData.length) / pagination.limit) || 1;
+
       setAssignments(assignmentsData);
       setMeta(metaData);
+      setPagination(prev => ({ ...prev, totalPages }));
     } catch (err) {
       console.error('Error fetching assignments', err);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handlePageChange = (newPage) => {
+    if (newPage < 1 || newPage > pagination.totalPages) return;
+    setPagination(prev => ({ ...prev, page: newPage }));
   };
 
 
@@ -142,9 +156,19 @@ const TeacherDashboard = () => {
     }
   };
 
-  const filteredAssignments = filter === 'All' 
+  const filteredAssignmentsRaw = filter === 'All' 
     ? assignments 
     : assignments.filter(a => a.status === filter);
+
+  // If the backend is ALREADY paginating, assignments is already sliced. 
+  // If not (legacy backend), we slice it here so the UI works perfectly immediately.
+  const isServerPaginated = assignments.length <= pagination.limit && pagination.totalPages > 1;
+  const startIndex = (pagination.page - 1) * pagination.limit;
+  const endIndex = startIndex + pagination.limit;
+  
+  const filteredAssignments = isServerPaginated 
+    ? filteredAssignmentsRaw 
+    : filteredAssignmentsRaw.slice(startIndex, endIndex);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -350,21 +374,36 @@ const TeacherDashboard = () => {
           {/* Pagination Controls */}
           {pagination.totalPages > 1 && (
             <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex items-center justify-between">
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+              <div className="flex gap-2">
+                {Array.from({ length: pagination.totalPages }, (_, i) => i + 1).map((num) => (
+                  <button
+                    key={num}
+                    onClick={() => handlePageChange(num)}
+                    className={`min-w-[32px] h-8 flex items-center justify-center rounded-lg text-[10px] font-black tracking-widest transition-all ${
+                      pagination.page === num
+                        ? 'bg-primary text-white shadow-sm'
+                        : 'bg-white border border-gray-200 text-gray-500 hover:border-primary hover:text-primary'
+                    }`}
+                  >
+                    {num}
+                  </button>
+                ))}
+              </div>
+              <div className="flex gap-2 text-gray-400 font-mono text-[10px] items-center mr-4 uppercase font-black tracking-widest opacity-50">
                 Page {pagination.page} of {pagination.totalPages}
-              </p>
+              </div>
               <div className="flex gap-2">
                 <button 
                   onClick={() => handlePageChange(pagination.page - 1)}
                   disabled={pagination.page === 1}
                   className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-[10px] font-black uppercase tracking-widest text-gray-600 hover:bg-gray-50 disabled:opacity-50 transition-all"
                 >
-                  Previous
+                  Prev
                 </button>
                 <button 
                   onClick={() => handlePageChange(pagination.page + 1)}
                   disabled={pagination.page === pagination.totalPages}
-                  className="px-4 py-2 bg-primary text-white rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-primary-dark shadow-sm disabled:opacity-50 transition-all"
+                  className="px-4 py-2 bg-primary text-white rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-primary-dark shadow-sm disabled:opacity-50 transition-all font-sans"
                 >
                   Next
                 </button>

@@ -9,6 +9,7 @@ const StudentDashboard = () => {
   const { user, socket } = useAuth();
   const [assignments, setAssignments] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [pagination, setPagination] = useState({ page: 1, totalPages: 1, limit: 6 });
   const [selectedAssignment, setSelectedAssignment] = useState(null);
   const [answer, setAnswer] = useState('');
   const [selectedFile, setSelectedFile] = useState(null);
@@ -23,11 +24,16 @@ const StudentDashboard = () => {
       socket.on('assignments-changed', fetchData);
       return () => socket.off('assignments-changed', fetchData);
     }
-  }, [socket]);
+  }, [socket, pagination.page]);
 
   const fetchData = async () => {
     try {
-      const assignmentsRes = await client.get('/assignments');
+      const assignmentsRes = await client.get('/assignments', {
+        params: {
+          page: pagination.page,
+          limit: pagination.limit
+        }
+      });
       
       const { data } = assignmentsRes;
       
@@ -36,8 +42,11 @@ const StudentDashboard = () => {
       
       // AUTO-SORT BY DUE DATE (Soonest First)
       assignmentsData = [...assignmentsData].sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
+
+      const totalPages = data.pagination?.totalPages || Math.ceil((data.pagination?.totalItems || assignmentsData.length) / pagination.limit) || 1;
       
       setAssignments(assignmentsData);
+      setPagination(prev => ({ ...prev, totalPages }));
       
       // Fetch submissions for each assignment to check status
       const submissionPromises = assignmentsData.map(a => 
@@ -57,6 +66,11 @@ const StudentDashboard = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handlePageChange = (newPage) => {
+    if (newPage < 1 || newPage > pagination.totalPages) return;
+    setPagination(prev => ({ ...prev, page: newPage }));
   };
 
 
@@ -114,7 +128,7 @@ const StudentDashboard = () => {
                <AlertCircle className="w-12 h-12 text-gray-300 mx-auto mb-4" />
                <p className="text-gray-400 font-medium">No published assignments available at the moment.</p>
             </div>
-          ) : assignments.map(assignment => {
+          ) : (assignments.length > pagination.limit ? assignments.slice((pagination.page - 1) * pagination.limit, pagination.page * pagination.limit) : assignments).map(assignment => {
             const submission = submissions[assignment.id];
             const isDue = isPast(new Date(assignment.dueDate));
             const isCompleted = assignment.status === 'Completed';
@@ -206,6 +220,45 @@ const StudentDashboard = () => {
           })}
         </div>
 
+        {/* Pagination Controls */}
+        {pagination.totalPages > 1 && (
+          <div className="mt-12 mb-6 flex items-center justify-between bg-white px-6 py-4 rounded-2xl border border-gray-100 shadow-sm">
+            <div className="flex gap-2">
+              {Array.from({ length: pagination.totalPages }, (_, i) => i + 1).map((num) => (
+                <button
+                  key={num}
+                  onClick={() => handlePageChange(num)}
+                  className={`min-w-[32px] h-8 flex items-center justify-center rounded-lg text-[10px] font-black tracking-widest transition-all ${
+                    pagination.page === num
+                      ? 'bg-primary text-white shadow-sm'
+                      : 'bg-white border border-gray-200 text-gray-500 hover:border-primary hover:text-primary'
+                  }`}
+                >
+                  {num}
+                </button>
+              ))}
+            </div>
+            <div className="flex gap-2 text-gray-400 font-mono text-[10px] items-center mr-4 uppercase font-black tracking-[0.2em] opacity-50">
+              Page {pagination.page} of {pagination.totalPages}
+            </div>
+            <div className="flex gap-2">
+              <button 
+                onClick={() => handlePageChange(pagination.page - 1)}
+                disabled={pagination.page === 1}
+                className="px-5 py-2.5 bg-white border border-gray-200 rounded-xl text-[10px] font-black uppercase tracking-widest text-gray-600 hover:bg-gray-50 disabled:opacity-50 transition-all"
+              >
+                Prev
+              </button>
+              <button 
+                onClick={() => handlePageChange(pagination.page + 1)}
+                disabled={pagination.page === pagination.totalPages}
+                className="px-5 py-2.5 bg-primary text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-primary-dark shadow-sm disabled:opacity-50 transition-all font-sans"
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        )}
       </main>
 
       {/* Submission Modal */}
