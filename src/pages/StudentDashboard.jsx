@@ -123,7 +123,7 @@ const StudentDashboard = () => {
                <AlertCircle className="w-12 h-12 text-gray-300 mx-auto mb-4" />
                <p className="text-gray-400 font-medium">No published assignments available at the moment.</p>
             </div>
-          ) : assignments.map(assignment => {
+          ) : (assignments.length > pagination.limit ? assignments.slice((pagination.page - 1) * pagination.limit, pagination.page * pagination.limit) : assignments).map(assignment => {
             const submission = submissions[assignment.id];
             const isDue = isPast(new Date(assignment.dueDate));
             const isCompleted = assignment.status === 'Completed';

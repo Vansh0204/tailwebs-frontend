@@ -152,9 +152,19 @@ const TeacherDashboard = () => {
     }
   };
 
-  const filteredAssignments = filter === 'All' 
+  const filteredAssignmentsRaw = filter === 'All' 
     ? assignments 
     : assignments.filter(a => a.status === filter);
+
+  // If the backend is ALREADY paginating, assignments is already sliced. 
+  // If not (legacy backend), we slice it here so the UI works perfectly immediately.
+  const isServerPaginated = assignments.length <= pagination.limit && pagination.totalPages > 1;
+  const startIndex = (pagination.page - 1) * pagination.limit;
+  const endIndex = startIndex + pagination.limit;
+  
+  const filteredAssignments = isServerPaginated 
+    ? filteredAssignmentsRaw 
+    : filteredAssignmentsRaw.slice(startIndex, endIndex);
 
   return (
     <div className="min-h-screen bg-gray-50">
