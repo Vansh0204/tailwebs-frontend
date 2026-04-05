@@ -65,7 +65,8 @@ const TeacherDashboard = () => {
   };
 
   const handlePageChange = (newPage) => {
-    if (newPage < 1 || newPage > pagination.totalPages) return;
+    const totalPagesCount = Math.ceil(filteredAssignmentsRaw.length / pagination.limit) || 1;
+    if (newPage < 1 || newPage > totalPagesCount) return;
     setPagination(prev => ({ ...prev, page: newPage }));
   };
 
