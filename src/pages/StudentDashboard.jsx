@@ -67,7 +67,7 @@ const StudentDashboard = () => {
   };
 
   const handlePageChange = (newPage) => {
-    if (newPage < 1 || newPage > pagination.totalPages) return;
+    if (newPage < 1 || newPage > totalPages) return;
     setPagination(prev => ({ ...prev, page: newPage }));
   };
 
@@ -98,17 +98,18 @@ const StudentDashboard = () => {
     }
   };
 
-  const filteredAssignments = assignments.filter(a => {
+  const allVisibleAssignments = assignments.filter(a => {
     const isSubmitted = !!submissions[a.id];
     return view === 'completed' ? isSubmitted : !isSubmitted;
   }).sort((a, b) => {
     if (view === 'completed') {
-      // Sort completed by submission date (newest first)
       return new Date(submissions[b.id]?.submittedAt) - new Date(submissions[a.id]?.submittedAt);
     }
-    // Sort pending by due date (soonest first)
     return new Date(a.dueDate) - new Date(b.dueDate);
   });
+
+  const totalPages = Math.ceil(allVisibleAssignments.length / pagination.limit) || 1;
+  const filteredAssignments = allVisibleAssignments.slice((pagination.page - 1) * pagination.limit, pagination.page * pagination.limit);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -167,7 +168,7 @@ const StudentDashboard = () => {
                  </button>
                )}
             </div>
-          ) : (filteredAssignments.length > pagination.limit ? filteredAssignments.slice((pagination.page - 1) * pagination.limit, pagination.page * pagination.limit) : filteredAssignments).map(assignment => {
+          ) : filteredAssignments.map(assignment => {
             const submission = submissions[assignment.id];
             const isDue = isPast(new Date(assignment.dueDate));
             const isCompleted = assignment.status === 'Completed';
@@ -260,10 +261,10 @@ const StudentDashboard = () => {
         </div>
 
         {/* Pagination Controls */}
-        {pagination.totalPages > 1 && (
+        {totalPages > 1 && (
           <div className="mt-12 mb-6 flex items-center justify-between bg-white px-6 py-4 rounded-2xl border border-gray-100 shadow-sm">
             <div className="flex gap-2">
-              {Array.from({ length: pagination.totalPages }, (_, i) => i + 1).map((num) => (
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((num) => (
                 <button
                   key={num}
                   onClick={() => handlePageChange(num)}
@@ -278,7 +279,7 @@ const StudentDashboard = () => {
               ))}
             </div>
             <div className="flex gap-2 text-gray-400 font-mono text-[10px] items-center mr-4 uppercase font-black tracking-[0.2em] opacity-50">
-              Page {pagination.page} of {pagination.totalPages}
+              Page {pagination.page} of {totalPages}
             </div>
             <div className="flex gap-2">
               <button 
@@ -290,7 +291,7 @@ const StudentDashboard = () => {
               </button>
               <button 
                 onClick={() => handlePageChange(pagination.page + 1)}
-                disabled={pagination.page === pagination.totalPages}
+                disabled={pagination.page === totalPages}
                 className="px-5 py-2.5 bg-primary text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-primary-dark shadow-sm disabled:opacity-50 transition-all font-sans"
               >
                 Next
