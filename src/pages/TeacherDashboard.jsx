@@ -10,7 +10,7 @@ const TeacherDashboard = () => {
   const [assignments, setAssignments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('All');
-  const [pagination, setPagination] = useState({ page: 1, totalPages: 1, limit: 5 });
+  const [pagination, setPagination] = useState({ page: 1, totalPages: 1, limit: 10 });
   const [meta, setMeta] = useState({ total: 0, published: 0, drafts: 0, totalSubmissions: 0 });
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
@@ -44,8 +44,11 @@ const TeacherDashboard = () => {
       });
       
       // Defensively handle both old (array) and new (object) backend formats
-      const assignmentsData = data.assignments || (Array.isArray(data) ? data : []);
+      let assignmentsData = data.assignments || (Array.isArray(data) ? data : []);
       
+      // AUTO-SORT BY DUE DATE (Soonest First)
+      assignmentsData = [...assignmentsData].sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
+
       // If server provides meta, use it. Otherwise, calculate locally for the visible list.
       const metaData = data.meta || { 
         total: assignmentsData.length, 
