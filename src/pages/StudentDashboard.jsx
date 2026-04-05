@@ -35,9 +35,14 @@ const StudentDashboard = () => {
         }
       });
       
-      const assignmentsData = assignmentsRes.data.assignments || [];
+      const { data } = assignmentsRes;
+      
+      // Defensively handle both old (array) and new (object) backend formats
+      const assignmentsData = data.assignments || (Array.isArray(data) ? data : []);
+      const totalPages = data.pagination?.totalPages || 1;
+      
       setAssignments(assignmentsData);
-      setPagination(prev => ({ ...prev, totalPages: assignmentsRes.data.pagination.totalPages }));
+      setPagination(prev => ({ ...prev, totalPages }));
       
       // Fetch submissions for each assignment to check status
       const submissionPromises = assignmentsData.map(a => 

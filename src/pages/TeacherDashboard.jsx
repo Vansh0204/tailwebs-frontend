@@ -40,13 +40,17 @@ const TeacherDashboard = () => {
         params: {
           page: pagination.page,
           limit: pagination.limit
-          // Filters can also be passed here if backend supports it specifically, 
-          // but for now we filter locally to keep the logic simple with our in-memory store
         }
       });
-      setAssignments(data.assignments);
-      setMeta(data.meta);
-      setPagination(prev => ({ ...prev, totalPages: data.pagination.totalPages }));
+      
+      // Defensively handle both old (array) and new (object) backend formats
+      const assignmentsData = data.assignments || (Array.isArray(data) ? data : []);
+      const metaData = data.meta || { total: 0, published: 0, drafts: 0, totalSubmissions: 0 };
+      const totalPages = data.pagination?.totalPages || 1;
+
+      setAssignments(assignmentsData);
+      setMeta(metaData);
+      setPagination(prev => ({ ...prev, totalPages }));
     } catch (err) {
       console.error('Error fetching assignments', err);
     } finally {
