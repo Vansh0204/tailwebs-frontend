@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { Link } from 'react-router-dom';
 import { LogOut, User, Bell, LayoutDashboard, Mail, Shield, BookOpen, X } from 'lucide-react';
 
 const Navbar = () => {
@@ -15,10 +16,10 @@ const Navbar = () => {
               <span className="text-2xl font-bold tracking-tighter text-gray-900">tailwebs<span className="text-primary">.</span></span>
             </div>
             <div className="hidden sm:flex sm:space-x-8">
-              <a href="/" className="inline-flex items-center px-1 pt-1 text-sm font-bold text-gray-900 uppercase tracking-widest hover:text-primary transition-colors">
+              <Link to="/" className="inline-flex items-center px-1 pt-1 text-sm font-bold text-gray-900 uppercase tracking-widest hover:text-primary transition-colors">
                 <LayoutDashboard className="w-4 h-4 mr-2" />
                 DASHBOARD
-              </a>
+              </Link>
             </div>
           </div>
 

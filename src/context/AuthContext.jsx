@@ -45,19 +45,28 @@ export const AuthProvider = ({ children }) => {
     const storedToken = localStorage.getItem('token');
     
     const checkSession = async () => {
+      // If we have local data, trust it initially to prevent "Flicker to Login"
       if (storedUser && storedToken) {
         try {
-          // Verify with server if this user still exists (after restart)
+          // Verify with server in background
           const { data } = await client.get('/auth/me');
-          setUser(data);
+          setUser(data); // Sync local state with fresh server state
         } catch (err) {
-          console.log('Session expired or server restarted. Logging out.');
-          localStorage.removeItem('token');
-          localStorage.removeItem('user');
-          setUser(null);
+          // IMPORTANT: Only logout if it's a 401/403. Otherwise, server might just be sleeping.
+          const status = err.response?.status;
+          if (status === 401 || status === 403) {
+            console.log('Session strictly invalid. Logging out.');
+            logout();
+          } else {
+            console.log('Backend wake-up lag or network error. Staying logged in.');
+          }
         }
       }
-      fetchSubjects();
+      
+      // Always fetch fresh subjects if possible
+      fetchSubjects().catch(() => {});
+      
+      // Stop the global loading state so dashboards can render
       setLoading(false);
     };
 
