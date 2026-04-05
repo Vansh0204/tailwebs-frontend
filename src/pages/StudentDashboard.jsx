@@ -131,20 +131,42 @@ const StudentDashboard = () => {
             </div>
           </div>
 
-          <div 
-            onClick={() => setView('completed')}
-            className={`group cursor-pointer bg-white px-6 py-4 rounded-2xl shadow-sm border flex items-center gap-4 transition-all hover:shadow-xl hover:-translate-y-1 ${
-              view === 'completed' ? 'border-primary ring-4 ring-primary/5' : 'border-gray-100'
-            }`}
-          >
-             <div className="text-right">
-                <span className="block text-[10px] uppercase font-black text-gray-400 group-hover:text-primary transition-colors">Total Completed</span>
-                <span className="text-lg font-bold text-primary">{Object.keys(submissions).length} Assignments</span>
-             </div>
-             <div className="h-8 w-px bg-gray-100"></div>
-             <div className="w-10 h-10 rounded-full bg-primary/5 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all">
-                <CheckCircle2 className="w-6 h-6" />
-             </div>
+          <div className="flex flex-col sm:flex-row items-center gap-4">
+            {/* Pending Stats Card */}
+            <div 
+              onClick={() => setView('pending')}
+              className={`group cursor-pointer bg-white px-6 py-4 rounded-2xl shadow-sm border flex items-center gap-4 transition-all hover:shadow-xl hover:-translate-y-1 ${
+                view === 'pending' ? 'border-primary ring-4 ring-primary/5' : 'border-gray-100'
+              }`}
+            >
+               <div className="text-right">
+                  <span className="block text-[10px] uppercase font-black text-gray-400 group-hover:text-primary transition-colors">Pending Tasks</span>
+                  <span className="text-lg font-bold text-primary">
+                    {assignments.filter(a => !submissions[a.id]).length} Tasks
+                  </span>
+               </div>
+               <div className="h-8 w-px bg-gray-100"></div>
+               <div className="w-10 h-10 rounded-full bg-primary/5 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all">
+                  <Clock className="w-6 h-6" />
+               </div>
+            </div>
+
+            {/* Completed Stats Card */}
+            <div 
+              onClick={() => setView('completed')}
+              className={`group cursor-pointer bg-white px-6 py-4 rounded-2xl shadow-sm border flex items-center gap-4 transition-all hover:shadow-xl hover:-translate-y-1 ${
+                view === 'completed' ? 'border-primary ring-4 ring-primary/5' : 'border-gray-100'
+              }`}
+            >
+               <div className="text-right">
+                  <span className="block text-[10px] uppercase font-black text-gray-400 group-hover:text-primary transition-colors">Total Completed</span>
+                  <span className="text-lg font-bold text-primary">{Object.keys(submissions).length} Assignments</span>
+               </div>
+               <div className="h-8 w-px bg-gray-100"></div>
+               <div className="w-10 h-10 rounded-full bg-primary/5 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all">
+                  <CheckCircle2 className="w-6 h-6" />
+               </div>
+            </div>
           </div>
         </div>
 
